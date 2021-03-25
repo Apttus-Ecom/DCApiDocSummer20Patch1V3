@@ -12269,7 +12269,7 @@
                     {
                         "name": "price",
                         "in": "query",
-                        "description": "The pricing strategy to use. 'default' | 'async' |'turbo' | 'skip'",
+                        "description": "The pricing strategy to use. 'default' | 'async' | 'skip'",
                         "required": true,
                         "style": "form",
                         "explode": true,
@@ -12630,7 +12630,7 @@
                     {
                         "name": "price",
                         "in": "query",
-                        "description": "The pricing strategy to use. 'default' | 'async' | 'turbo' | 'skip'",
+                        "description": "The pricing strategy to use. 'default' | 'async'  | 'skip'",
                         "required": true,
                         "style": "form",
                         "explode": true,
@@ -13441,7 +13441,7 @@
                     {
                         "name": "rule",
                         "in": "query",
-                        "description": "The rule strategy to use. 'default' | 'async' | 'turbo' | 'skip'",
+                        "description": "The rule strategy to use. 'default' | 'async' | 'skip'",
                         "required": true,
                         "style": "form",
                         "explode": true,
@@ -14061,7 +14061,7 @@
                     {
                         "name": "price",
                         "in": "query",
-                        "description": "The pricing strategy to use. 'default' | 'async' |  'turbo' | 'skip'",
+                        "description": "The pricing strategy to use. 'default' | 'async' | 'skip'",
                         "required": true,
                         "style": "form",
                         "explode": true,
@@ -14073,7 +14073,7 @@
                     {
                         "name": "rule",
                         "in": "query",
-                        "description": "The rule strategy to use. 'default' | 'async' | 'turbo' | 'skip'",
+                        "description": "The rule strategy to use. 'default' | 'async' | 'skip'",
                         "required": true,
                         "style": "form",
                         "explode": true,
@@ -14994,18 +14994,6 @@
                         }
                     },
                     {
-                        "name": "mode",
-                        "in": "query",
-                        "description": "The mode to use. 'default' | 'turbo'",
-                        "required": true,
-                        "style": "form",
-                        "explode": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "turbo"
-                        }
-                    },
-                    {
                         "name": "cartId",
                         "in": "path",
                         "description": "The reference to the cart or 'active' for the current active cart",
@@ -15100,18 +15088,6 @@
                         }
                     },
                     {
-                        "name": "mode",
-                        "in": "query",
-                        "description": "The mode to use. 'default' | 'turbo'",
-                        "required": true,
-                        "style": "form",
-                        "explode": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "default"
-                        }
-                    },
-                    {
                         "name": "cartId",
                         "in": "path",
                         "description": "The reference to the cart or 'active' for the current active cart",
@@ -15175,18 +15151,6 @@
                 "description": "Causes a reprice of the cart on the server matching the cartId path variable.",
                 "operationId": "PriceCart",
                 "parameters": [
-                    {
-                        "name": "mode",
-                        "in": "query",
-                        "description": "The mode to use. 'default' | 'turbo'",
-                        "required": true,
-                        "style": "form",
-                        "explode": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "turbo"
-                        }
-                    },
                     {
                         "name": "cartId",
                         "in": "path",
