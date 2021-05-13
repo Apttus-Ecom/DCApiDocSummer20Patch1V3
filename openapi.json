@@ -18,6 +18,9 @@
     ],
     "tags": [
         {
+            "name": "Authentication"
+        },
+        {
             "name": "Catalog"
         },
         {
@@ -30,16 +33,385 @@
             "name": "Generic"
         },
         {
-            "name": "Authentication"
+            "name": "Order"
         },
         {
-            "name": "Checkout"
+            "name": "Quote"
         },
         {
             "name": "Storefront"
+        },
+        {
+            "name": "Account"
         }
     ],
     "paths": {
+        "/users/key": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get Signing Key",
+                "description": "The /users/key endpoint is used to obtain a temporary 64 bit hexadecimal encryption key that can be used to encrypt the client credentials before obtaining an access token.",
+                "operationId": "GetSigningKey",
+                "parameters": [
+                    {
+                        "name": "x-storefront",
+                        "in": "header",
+                        "description": "The name of the storefront being used for the request.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ECommerce"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Authentication"
+                                },
+                                "example": {
+                                    "title": "success",
+                                    "status": 200,
+                                    "data": "10cab93e8ffc3fffddcc09f7006f3bffd5b0be5ac8fb0a79e19d9fdc3090fed4"
+                                }
+                            }
+                        }
+                    }
+                },
+                "deprecated": false
+            }
+        },
+        "/users/token/{token}": {
+            "delete": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Revoke Token",
+                "description": "Revoke an OAuth token if you don’t want an external client to access Salesforce data or if you don’t trust the client to discontinue access on its own. This will invalidate the token set to the 'token' path variable in the url.",
+                "operationId": "RevokeToken",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "description": "The access token you wish to revoke",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "<string>"
+                        }
+                    },
+                    {
+                        "name": "x-storefront",
+                        "in": "header",
+                        "description": "The name of the storefront being used for the request.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ECommerce"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Authentication"
+                                },
+                                "example": {
+                                    "title": "success",
+                                    "status": 200,
+                                    "data": true
+                                }
+                            }
+                        }
+                    }
+                },
+                "deprecated": false
+            }
+        },
+        "/user/token": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get Access Token",
+                "description": "The /users/token endpoint should be used to obtain an access token for the current user. The body should contain the base64 data of the encrypted client credentials using the key obtained from the /users/key endpoint.",
+                "operationId": "GetAccessToken",
+                "parameters": [
+                    {
+                        "name": "x-storefront",
+                        "in": "header",
+                        "description": "The name of the storefront being used for the request.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ECommerce"
+                        }
+                    },
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "Content type of the request body.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "application/json"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "In order to obtain a temporary encryption key, a callout must be made to the /users/key endpoint that will return a 64-bit hexadecimal key similar to the following:\n\n    9d035a21deee3664ca5f7b8810c4251237774a6f01140d98fdadb6d214bcd3b7\n\nOnce a key has been obtained, you can use the encryption library of your choosing to encrypt the request body with the **AES-CBC** algorithm. \n\n - Before base64 encoding the encrypted data, make sure the initialization vector used is prepended\n\nThe result of the encryption should look similar in structure to:\n\n    047v2MG4m5cxkqwIXN1po0Q8p5PTpRlm9hlTlC89jPOpjkGlL3wZ732XDPveJLUWYkrJRnzt5M2bh+IZhIn4r+BmI21xPNQCESWZMSwOPn0=\n\nThis base64 string will be used as the body of the request sent to the /users/token endpoint. Below are a couple of example using popular JavaScript frameworks:\n\n\n\n    // First obtain a key by making an API call to /users/key\n    const key = \"9d035a21deee3664ca5f7b8810c4251237774a6f01140d98fdadb6d214bcd3b7\";\n    \n    // Initialization Vector for CBC algorithm\n    const iv = window.crypto.getRandomValues(new Uint8Array(16));\n    \n    // Raw customer credential data\n    const clientCredentials = {\n      \"username\" : \"customer@myshop.community.com\",\n      \"password\" : \"strongpassword\"\n    }\n    \n    // Supporting function to convert the hex key into an ArrayBuffer object\n    const hexToArrayBuffer = (hex) => {\n        var typedArray = new Uint8Array(hex.match(/[\\da-f]{2}/gi).map(function (h) {\n          return parseInt(h, 16)\n        }));\n        return typedArray.buffer;\n    }\n    \n    // Supporting function converts a string into an ArrayBuffer\n    const getUtf8Bytes = (str) =>\n      new Uint8Array(\n        [...unescape(encodeURIComponent(str))].map(c => c.charCodeAt(0))\n      );\n    \n    crypto.subtle.importKey(\n        \"raw\",\n        hexToArrayBuffer(key),\n        {   //this is the algorithm options\n            name: \"AES-CBC\"\n        },\n        false, //whether the key is extractable (i.e. can be used in exportKey)\n        [\"encrypt\", \"decrypt\"] // key can be used for encryption and decryption\n    )\n    .then((key) => {\n        return crypto.subtle.encrypt(\n            {\n                name: \"AES-CBC\",\n                //Don't re-use initialization vectors!\n                //Always generate a new iv every time your encrypt!\n                iv: iv,\n                length: 256\n            },\n            key, // CryptoKey object generated from hex key\n            getUtf8Bytes(JSON.stringify(clientCredentials)) // ArrayBuffer of client credentials\n        )\n    })\n    .then((encrypted) => {\n        // The result from the promise will contain encrypted customer credentials.\n        // In order to decrypt the request, the IV used must be prepended to the body\n        const requestData = btoa(String.fromCharCode(...iv) + String.fromCharCode(...new Uint8Array(encrypted)));\n        console.log(requestData);\n        // The request data can then be sent to the token endpoint in order to obtain an access token\n    });\n\n    // First obtain a key by making an API call to /users/key\n    const key = CryptoJS.enc.Hex.parse(\"9d035a21deee3664ca5f7b8810c4251237774a6f01140d98fdadb6d214bcd3b7\");\n    \n    // Initialization Vector for CBC algorithm\n    const iv = CryptoJS.lib.WordArray.random(128/8);\n    \n    // Raw customer credential data\n    const clientCredentials = {\n      \"username\" : \"customer@myshop.community.com\",\n      \"password\" : \"strongpassword\"\n    }  \n    const encrypted = CryptoJS.AES.encrypt(JSON.stringify(clientCredentials), key, {\n      iv: iv,\n      padding: CryptoJS.pad.Pkcs7,\n      mode: CryptoJS.mode.CBC\n    });\n    \n    // The unencoded data sent to the server must contain the Initialization Vector prepended to the encrypted credentials\n    const result = btoa(atob(iv.toString(CryptoJS.enc.Base64)) + atob(encrypted.ciphertext.toString(CryptoJS.enc.Base64)));",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "example": {
+                                    "username": "sample@example.com",
+                                    "password": "pswd"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessToken"
+                                },
+                                "example": {
+                                    "title": "success",
+                                    "status": 200,
+                                    "data": {
+                                        "userId": "0050f000008nTccAAE",
+                                        "accessToken": "00DG0000000iqtB!ARUAQHofFrVurFKWS8TcFKmhFM1yiA1VBzEVVAOXDB.5r_rlpxXuj53RnqfY2QKUgsL3N.ge5kmSPN5UcHK9iHckog6eTw.4"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "deprecated": false
+            }
+        },
+        "/users/active": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get Active User",
+                "description": "You can easily get the record information for the current active user by passing the 'active' parameter to the users API",
+                "operationId": "GetActiveUser",
+                "parameters": [
+                    {
+                        "name": "x-storefront",
+                        "in": "header",
+                        "description": "The name of the storefront being used for the request.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ECommerce"
+                        }
+                    },
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "Content type of the request body.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "application/json"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ActiveUser"
+                                },
+                                "example": {
+                                    "title": "success",
+                                    "status": 200,
+                                    "data": {
+                                        "BadgeText": "",
+                                        "OutOfOfficeMessage": "",
+                                        "IsECommerceUser": false,
+                                        "IsProfilePhotoActive": false,
+                                        "MediumBannerPhotoUrl": "/partner/profilephoto/005/E",
+                                        "SmallBannerPhotoUrl": "/partner/profilephoto/005/D",
+                                        "BannerPhotoUrl": "/partner/profilephoto/005/B",
+                                        "DefaultGroupNotificationFrequency": "D",
+                                        "DigestFrequency": "D",
+                                        "MediumPhotoUrl": "/partner/profilephoto/005/M",
+                                        "IsExtIndicatorVisible": false,
+                                        "SmallPhotoUrl": "/partner/profilephoto/005/T",
+                                        "FullPhotoUrl": "/partner/profilephoto/005/F",
+                                        "IsPortalEnabled": false,
+                                        "UserPreferencesNativeEmailClient": false,
+                                        "UserPreferencesNewLightningReportRunPageEnabled": false,
+                                        "UserPreferencesSRHOverrideActivities": false,
+                                        "UserPreferencesUserDebugModePref": false,
+                                        "UserPreferencesHasCelebrationBadge": false,
+                                        "UserPreferencesPreviewCustomTheme": false,
+                                        "UserPreferencesSuppressEventSFXReminders": false,
+                                        "UserPreferencesSuppressTaskSFXReminders": false,
+                                        "UserPreferencesExcludeMailAppAttachments": false,
+                                        "UserPreferencesFavoritesShowTopFavorites": false,
+                                        "UserPreferencesRecordHomeReservedWTShown": false,
+                                        "UserPreferencesRecordHomeSectionCollapseWTShown": false,
+                                        "UserPreferencesFavoritesWTShown": false,
+                                        "UserPreferencesCreateLEXAppsWTShown": false,
+                                        "UserPreferencesGlobalNavGridMenuWTShown": false,
+                                        "UserPreferencesGlobalNavBarWTShown": false,
+                                        "UserPreferencesHideBiggerPhotoCallout": false,
+                                        "UserPreferencesHideSfxWelcomeMat": false,
+                                        "UserPreferencesHideLightningMigrationModal": false,
+                                        "UserPreferencesHideEndUserOnboardingAssistantModal": false,
+                                        "UserPreferencesPreviewLightning": false,
+                                        "UserPreferencesLightningExperiencePreferred": false,
+                                        "UserPreferencesShowStreetAddressToGuestUsers": false,
+                                        "UserPreferencesShowFaxToGuestUsers": false,
+                                        "UserPreferencesShowMobilePhoneToGuestUsers": false,
+                                        "UserPreferencesShowWorkPhoneToGuestUsers": false,
+                                        "UserPreferencesShowManagerToGuestUsers": false,
+                                        "UserPreferencesShowEmailToGuestUsers": false,
+                                        "UserPreferencesCacheDiagnostics": false,
+                                        "UserPreferencesPathAssistantCollapsed": false,
+                                        "UserPreferencesDisableEndorsementEmail": false,
+                                        "UserPreferencesHideS1BrowserUI": false,
+                                        "UserPreferencesPipelineViewHideHelpPopover": false,
+                                        "UserPreferencesShowCountryToGuestUsers": false,
+                                        "UserPreferencesShowPostalCodeToGuestUsers": false,
+                                        "UserPreferencesShowStateToGuestUsers": false,
+                                        "UserPreferencesShowCityToGuestUsers": false,
+                                        "UserPreferencesShowTitleToGuestUsers": false,
+                                        "UserPreferencesShowProfilePicToGuestUsers": false,
+                                        "UserPreferencesShowCountryToExternalUsers": false,
+                                        "UserPreferencesShowPostalCodeToExternalUsers": false,
+                                        "UserPreferencesShowStateToExternalUsers": false,
+                                        "UserPreferencesShowCityToExternalUsers": false,
+                                        "UserPreferencesShowStreetAddressToExternalUsers": false,
+                                        "UserPreferencesShowFaxToExternalUsers": false,
+                                        "UserPreferencesShowMobilePhoneToExternalUsers": false,
+                                        "UserPreferencesShowWorkPhoneToExternalUsers": false,
+                                        "UserPreferencesShowEmailToExternalUsers": false,
+                                        "UserPreferencesShowManagerToExternalUsers": false,
+                                        "UserPreferencesShowTitleToExternalUsers": true,
+                                        "UserPreferencesDisableFileShareNotificationsForApi": false,
+                                        "UserPreferencesEnableAutoSubForFeeds": false,
+                                        "UserPreferencesDisableSharePostEmail": false,
+                                        "UserPreferencesDisableBookmarkEmail": false,
+                                        "UserPreferencesDisableMessageEmail": false,
+                                        "UserPreferencesSortFeedByComment": true,
+                                        "UserPreferencesDisableLikeEmail": true,
+                                        "UserPreferencesDisCommentAfterLikeEmail": false,
+                                        "UserPreferencesHideSecondChatterOnboardingSplash": false,
+                                        "UserPreferencesHideChatterOnboardingSplash": false,
+                                        "UserPreferencesHideCSNDesktopTask": false,
+                                        "UserPreferencesDisMentionsCommentEmail": false,
+                                        "UserPreferencesDisableMentionsPostEmail": false,
+                                        "UserPreferencesHideCSNGetChatterMobileTask": false,
+                                        "UserPreferencesReceiveNotificationsAsDelegatedApprover": false,
+                                        "UserPreferencesReceiveNoNotificationsAsApprover": false,
+                                        "UserPreferencesApexPagesDeveloperMode": false,
+                                        "UserPreferencesContentEmailAsAndWhen": true,
+                                        "UserPreferencesContentNoEmail": true,
+                                        "UserPreferencesDisProfPostCommentEmail": false,
+                                        "UserPreferencesDisableLaterCommentEmail": false,
+                                        "UserPreferencesDisableChangeCommentEmail": false,
+                                        "UserPreferencesDisableProfilePostEmail": false,
+                                        "UserPreferencesDisableFollowersEmail": false,
+                                        "UserPreferencesDisableAllFeedsEmail": false,
+                                        "UserPreferencesReminderSoundOff": false,
+                                        "UserPreferencesTaskRemindersCheckboxDefault": true,
+                                        "UserPreferencesEventRemindersCheckboxDefault": true,
+                                        "UserPreferencesActivityRemindersPopup": true,
+                                        "ForecastEnabled": false,
+                                        "UserPermissionsChatterAnswersUser": false,
+                                        "UserPermissionsSiteforcePublisherUser": false,
+                                        "UserPermissionsSiteforceContributorUser": false,
+                                        "UserPermissionsSupportUser": false,
+                                        "UserPermissionsInteractionUser": false,
+                                        "UserPermissionsKnowledgeUser": false,
+                                        "UserPermissionsSFContentUser": false,
+                                        "UserPermissionsMobileUser": false,
+                                        "UserPermissionsCallCenterAutoLogin": false,
+                                        "UserPermissionsOfflineUser": false,
+                                        "UserPermissionsMarketingUser": false,
+                                        "NumberOfFailedLogins": 0,
+                                        "SystemModstamp": "2020-03-02T21:04:34.000Z",
+                                        "LastModifiedById": "0050f000008nTccAAE",
+                                        "LastModifiedDate": "2020-03-02T21:04:34.000Z",
+                                        "CreatedById": "0050f000008nTcNAAU",
+                                        "CreatedDate": "2018-07-12T22:14:06.000Z",
+                                        "LastPasswordChangeDate": "2019-02-28T16:07:34.000Z",
+                                        "LastLoginDate": "2020-03-02T17:18:23.000Z",
+                                        "LanguageLocaleKey": "en_US",
+                                        "UserType": "Standard",
+                                        "ProfileId": "00eG0000001AyZ0IAK",
+                                        "EmailEncodingKey": "ISO-8859-1",
+                                        "ReceivesAdminInfoEmails": true,
+                                        "ReceivesInfoEmails": true,
+                                        "LocaleSidKey": "en_US",
+                                        "UserRoleId": "00EG0000000xHqbMAE",
+                                        "TimeZoneSidKey": "America/Los_Angeles",
+                                        "IsActive": true,
+                                        "CommunityNickname": "chmoyle",
+                                        "Alias": "cmoyl",
+                                        "EmailPreferencesStayInTouchReminder": true,
+                                        "EmailPreferencesAutoBccStayInTouch": false,
+                                        "EmailPreferencesAutoBcc": true,
+                                        "Email": "chmoyle@apttus.com",
+                                        "Address": null,
+                                        "CompanyName": "Apttus",
+                                        "Name": "Chris Moyle",
+                                        "FirstName": "Chris",
+                                        "LastName": "Moyle",
+                                        "Username": "chmoyle@apttus.com.webstore.dev",
+                                        "Id": "0050f000008nTccAAE"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "deprecated": false
+            }
+        },
         "/products/{productId}": {
             "get": {
                 "tags": [
@@ -13806,6 +14178,18 @@
                         }
                     },
                     {
+                        "name": "rule",
+                        "in": "query",
+                        "description": "The rule strategy to use. 'default' | 'async' | 'skip'",
+                        "required": true,
+                        "style": "form",
+                        "explode": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "skip"
+                        }
+                    },
+                    {
                         "name": "cartId",
                         "in": "path",
                         "description": "The reference to the cart or 'active' for the current active cart",
@@ -14288,6 +14672,18 @@
                         "name": "price",
                         "in": "query",
                         "description": "The pricing strategy to use. 'default' | 'async' | 'skip'",
+                        "required": true,
+                        "style": "form",
+                        "explode": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "skip"
+                        }
+                    },
+                    {
+                        "name": "rule",
+                        "in": "query",
+                        "description": "The rule strategy to use. 'default' | 'async' | 'skip'",
                         "required": true,
                         "style": "form",
                         "explode": true,
@@ -14984,13 +15380,25 @@
                     {
                         "name": "price",
                         "in": "query",
-                        "description": "The pricing strategy to use. 'default' | 'async'",
+                        "description": "The pricing strategy to use. 'default' | 'async' | 'skip'",
                         "required": true,
                         "style": "form",
                         "explode": true,
                         "schema": {
                             "type": "string",
                             "example": "async"
+                        }
+                    },
+                    {
+                        "name": "mode",
+                        "in": "query",
+                        "description": "The mode to use. 'default' | 'turbo'",
+                        "required": true,
+                        "style": "form",
+                        "explode": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "turbo"
                         }
                     },
                     {
@@ -15078,7 +15486,19 @@
                     {
                         "name": "price",
                         "in": "query",
-                        "description": "The pricing strategy to use. 'default' | 'async'",
+                        "description": "The pricing strategy to use. 'default' | 'async' | 'skip'",
+                        "required": true,
+                        "style": "form",
+                        "explode": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "default"
+                        }
+                    },
+                    {
+                        "name": "mode",
+                        "in": "query",
+                        "description": "The mode to use. 'default' | 'turbo'",
                         "required": true,
                         "style": "form",
                         "explode": true,
@@ -15151,6 +15571,18 @@
                 "description": "Causes a reprice of the cart on the server matching the cartId path variable.",
                 "operationId": "PriceCart",
                 "parameters": [
+                    {
+                        "name": "mode",
+                        "in": "query",
+                        "description": "The mode to use. 'default' | 'turbo'",
+                        "required": true,
+                        "style": "form",
+                        "explode": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "turbo"
+                        }
+                    },
                     {
                         "name": "cartId",
                         "in": "path",
@@ -15488,7 +15920,7 @@
                     {
                         "name": "object",
                         "in": "path",
-                        "description": "Name of the object you want to take an action on.",
+                        "description": "API name of the object you want to take an action on.",
                         "required": true,
                         "style": "simple",
                         "explode": false,
@@ -20277,7 +20709,7 @@
                     {
                         "name": "object",
                         "in": "path",
-                        "description": "The name of the storefront being used for the request.",
+                        "description": "Api name of the object being used for the request.",
                         "required": true,
                         "style": "simple",
                         "explode": false,
@@ -20621,7 +21053,7 @@
                     {
                         "name": "object",
                         "in": "path",
-                        "description": "Name of the object you want returned.",
+                        "description": "Api Name of the object you want returned.",
                         "required": true,
                         "style": "simple",
                         "explode": false,
@@ -20729,7 +21161,7 @@
                     {
                         "name": "object",
                         "in": "path",
-                        "description": "Name of the object type this request is referencing.",
+                        "description": "Api Name of the object type this request is referencing.",
                         "required": true,
                         "style": "simple",
                         "explode": false,
@@ -23233,7 +23665,7 @@
         "/carts/{cartId}/checkout": {
             "post": {
                 "tags": [
-                    "Checkout"
+                    "Order"
                 ],
                 "summary": "Create Order",
                 "description": "Creates an order object based on the cart that matches the cartId path variable.",
@@ -23242,7 +23674,7 @@
                     {
                         "name": "cartId",
                         "in": "path",
-                        "description": "The name of the storefront being used for the request.",
+                        "description": "cart ID is passed as string in the request.",
                         "required": true,
                         "style": "simple",
                         "explode": false,
@@ -23497,7 +23929,7 @@
         "/carts/{cartId}/proposal": {
             "post": {
                 "tags": [
-                    "Checkout"
+                    "Quote"
                 ],
                 "summary": "Create Proposal",
                 "description": "Creates a proposal object based on the cart that matches the cartId path variable. User must pass in the editable fields of the quote object they would like to set in the body of the request.\n\n|**Type**|**Optional**|**Description**|\n|--|--|--|\n| Apttus_Proposal__Proposal__c | No | Proposal object with the preset values to create on the server. |",
@@ -23683,190 +24115,15 @@
                 "deprecated": false
             }
         },
-        "/users/key": {
+        "/accounts/default": {
             "get": {
                 "tags": [
-                    "Authentication"
+                    "Account"
                 ],
-                "summary": "Get Signing Key",
-                "description": "The /users/key endpoint is used to obtain a temporary 64 bit hexadecimal encryption key that can be used to encrypt the client credentials before obtaining an access token.",
-                "operationId": "GetSigningKey",
-                "parameters": [
-                    {
-                        "name": "x-storefront",
-                        "in": "header",
-                        "description": "The name of the storefront being used for the request.",
-                        "required": true,
-                        "style": "simple",
-                        "explode": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "ECommerce"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Authentication"
-                                },
-                                "example": {
-                                    "title": "success",
-                                    "status": 200,
-                                    "data": "10cab93e8ffc3fffddcc09f7006f3bffd5b0be5ac8fb0a79e19d9fdc3090fed4"
-                                }
-                            }
-                        }
-                    }
-                },
-                "deprecated": false
-            }
-        },
-        "/users/token/{token}": {
-            "delete": {
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "Revoke Token",
-                "description": "Revoke an OAuth token if you don’t want an external client to access Salesforce data or if you don’t trust the client to discontinue access on its own. This will invalidate the token set to the 'token' path variable in the url.",
-                "operationId": "RevokeToken",
-                "parameters": [
-                    {
-                        "name": "token",
-                        "in": "path",
-                        "description": "The access token you wish to revoke",
-                        "required": true,
-                        "style": "simple",
-                        "explode": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "<string>"
-                        }
-                    },
-                    {
-                        "name": "x-storefront",
-                        "in": "header",
-                        "description": "The name of the storefront being used for the request.",
-                        "required": true,
-                        "style": "simple",
-                        "explode": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "ECommerce"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Authentication"
-                                },
-                                "example": {
-                                    "title": "success",
-                                    "status": 200,
-                                    "data": true
-                                }
-                            }
-                        }
-                    }
-                },
-                "deprecated": false
-            }
-        },
-        "/user/token": {
-            "post": {
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "Get Access Token",
-                "description": "The /users/token endpoint should be used to obtain an access token for the current user. The body should contain the base64 data of the encrypted client credentials using the key obtained from the /users/key endpoint.",
-                "operationId": "GetAccessToken",
-                "parameters": [
-                    {
-                        "name": "x-storefront",
-                        "in": "header",
-                        "description": "The name of the storefront being used for the request.",
-                        "required": true,
-                        "style": "simple",
-                        "explode": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "ECommerce"
-                        }
-                    },
-                    {
-                        "name": "Content-Type",
-                        "in": "header",
-                        "description": "Content type of the request body.",
-                        "required": true,
-                        "style": "simple",
-                        "explode": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "application/json"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "In order to obtain a temporary encryption key, a callout must be made to the /users/key endpoint that will return a 64-bit hexadecimal key similar to the following:\n\n    9d035a21deee3664ca5f7b8810c4251237774a6f01140d98fdadb6d214bcd3b7\n\nOnce a key has been obtained, you can use the encryption library of your choosing to encrypt the request body with the **AES-CBC** algorithm. \n\n - Before base64 encoding the encrypted data, make sure the initialization vector used is prepended\n\nThe result of the encryption should look similar in structure to:\n\n    047v2MG4m5cxkqwIXN1po0Q8p5PTpRlm9hlTlC89jPOpjkGlL3wZ732XDPveJLUWYkrJRnzt5M2bh+IZhIn4r+BmI21xPNQCESWZMSwOPn0=\n\nThis base64 string will be used as the body of the request sent to the /users/token endpoint. Below are a couple of example using popular JavaScript frameworks:\n\n\n\n    // First obtain a key by making an API call to /users/key\n    const key = \"9d035a21deee3664ca5f7b8810c4251237774a6f01140d98fdadb6d214bcd3b7\";\n    \n    // Initialization Vector for CBC algorithm\n    const iv = window.crypto.getRandomValues(new Uint8Array(16));\n    \n    // Raw customer credential data\n    const clientCredentials = {\n      \"username\" : \"customer@myshop.community.com\",\n      \"password\" : \"strongpassword\"\n    }\n    \n    // Supporting function to convert the hex key into an ArrayBuffer object\n    const hexToArrayBuffer = (hex) => {\n        var typedArray = new Uint8Array(hex.match(/[\\da-f]{2}/gi).map(function (h) {\n          return parseInt(h, 16)\n        }));\n        return typedArray.buffer;\n    }\n    \n    // Supporting function converts a string into an ArrayBuffer\n    const getUtf8Bytes = (str) =>\n      new Uint8Array(\n        [...unescape(encodeURIComponent(str))].map(c => c.charCodeAt(0))\n      );\n    \n    crypto.subtle.importKey(\n        \"raw\",\n        hexToArrayBuffer(key),\n        {   //this is the algorithm options\n            name: \"AES-CBC\"\n        },\n        false, //whether the key is extractable (i.e. can be used in exportKey)\n        [\"encrypt\", \"decrypt\"] // key can be used for encryption and decryption\n    )\n    .then((key) => {\n        return crypto.subtle.encrypt(\n            {\n                name: \"AES-CBC\",\n                //Don't re-use initialization vectors!\n                //Always generate a new iv every time your encrypt!\n                iv: iv,\n                length: 256\n            },\n            key, // CryptoKey object generated from hex key\n            getUtf8Bytes(JSON.stringify(clientCredentials)) // ArrayBuffer of client credentials\n        )\n    })\n    .then((encrypted) => {\n        // The result from the promise will contain encrypted customer credentials.\n        // In order to decrypt the request, the IV used must be prepended to the body\n        const requestData = btoa(String.fromCharCode(...iv) + String.fromCharCode(...new Uint8Array(encrypted)));\n        console.log(requestData);\n        // The request data can then be sent to the token endpoint in order to obtain an access token\n    });\n\n    // First obtain a key by making an API call to /users/key\n    const key = CryptoJS.enc.Hex.parse(\"9d035a21deee3664ca5f7b8810c4251237774a6f01140d98fdadb6d214bcd3b7\");\n    \n    // Initialization Vector for CBC algorithm\n    const iv = CryptoJS.lib.WordArray.random(128/8);\n    \n    // Raw customer credential data\n    const clientCredentials = {\n      \"username\" : \"customer@myshop.community.com\",\n      \"password\" : \"strongpassword\"\n    }  \n    const encrypted = CryptoJS.AES.encrypt(JSON.stringify(clientCredentials), key, {\n      iv: iv,\n      padding: CryptoJS.pad.Pkcs7,\n      mode: CryptoJS.mode.CBC\n    });\n    \n    // The unencoded data sent to the server must contain the Initialization Vector prepended to the encrypted credentials\n    const result = btoa(atob(iv.toString(CryptoJS.enc.Base64)) + atob(encrypted.ciphertext.toString(CryptoJS.enc.Base64)));",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "username": {
-                                        "type": "string"
-                                    },
-                                    "password": {
-                                        "type": "string"
-                                    }
-                                },
-                                "example": {
-                                    "username": "sample@example.com",
-                                    "password": "pswd"
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AccessToken"
-                                },
-                                "example": {
-                                    "title": "success",
-                                    "status": 200,
-                                    "data": {
-                                        "userId": "0050f000008nTccAAE",
-                                        "accessToken": "00DG0000000iqtB!ARUAQHofFrVurFKWS8TcFKmhFM1yiA1VBzEVVAOXDB.5r_rlpxXuj53RnqfY2QKUgsL3N.ge5kmSPN5UcHK9iHckog6eTw.4"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "deprecated": false
-            }
-        },
-        "/users/active": {
-            "get": {
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "Get Active User",
-                "description": "You can easily get the record information for the current active user by passing the 'active' parameter to the users API",
-                "operationId": "GetActiveUser",
-                "parameters": [
+                "summary": "Get Default Account",
+                "description": "The following request will return the  account associated with the current user. For guest user it retrieves the account associated with the storefront object",
+                "operationId": "GetDefaultAccount",
+                                "parameters": [
                     {
                         "name": "x-storefront",
                         "in": "header",
@@ -23898,148 +24155,227 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ActiveUser"
+                                    "$ref": "#/components/schemas/Account"
                                 },
                                 "example": {
                                     "title": "success",
                                     "status": 200,
                                     "data": {
-                                        "BadgeText": "",
-                                        "OutOfOfficeMessage": "",
-                                        "IsECommerceUser": false,
-                                        "IsProfilePhotoActive": false,
-                                        "MediumBannerPhotoUrl": "/partner/profilephoto/005/E",
-                                        "SmallBannerPhotoUrl": "/partner/profilephoto/005/D",
-                                        "BannerPhotoUrl": "/partner/profilephoto/005/B",
-                                        "DefaultGroupNotificationFrequency": "D",
-                                        "DigestFrequency": "D",
-                                        "MediumPhotoUrl": "/partner/profilephoto/005/M",
-                                        "IsExtIndicatorVisible": false,
-                                        "SmallPhotoUrl": "/partner/profilephoto/005/T",
-                                        "FullPhotoUrl": "/partner/profilephoto/005/F",
-                                        "IsPortalEnabled": false,
-                                        "UserPreferencesNativeEmailClient": false,
-                                        "UserPreferencesNewLightningReportRunPageEnabled": false,
-                                        "UserPreferencesSRHOverrideActivities": false,
-                                        "UserPreferencesUserDebugModePref": false,
-                                        "UserPreferencesHasCelebrationBadge": false,
-                                        "UserPreferencesPreviewCustomTheme": false,
-                                        "UserPreferencesSuppressEventSFXReminders": false,
-                                        "UserPreferencesSuppressTaskSFXReminders": false,
-                                        "UserPreferencesExcludeMailAppAttachments": false,
-                                        "UserPreferencesFavoritesShowTopFavorites": false,
-                                        "UserPreferencesRecordHomeReservedWTShown": false,
-                                        "UserPreferencesRecordHomeSectionCollapseWTShown": false,
-                                        "UserPreferencesFavoritesWTShown": false,
-                                        "UserPreferencesCreateLEXAppsWTShown": false,
-                                        "UserPreferencesGlobalNavGridMenuWTShown": false,
-                                        "UserPreferencesGlobalNavBarWTShown": false,
-                                        "UserPreferencesHideBiggerPhotoCallout": false,
-                                        "UserPreferencesHideSfxWelcomeMat": false,
-                                        "UserPreferencesHideLightningMigrationModal": false,
-                                        "UserPreferencesHideEndUserOnboardingAssistantModal": false,
-                                        "UserPreferencesPreviewLightning": false,
-                                        "UserPreferencesLightningExperiencePreferred": false,
-                                        "UserPreferencesShowStreetAddressToGuestUsers": false,
-                                        "UserPreferencesShowFaxToGuestUsers": false,
-                                        "UserPreferencesShowMobilePhoneToGuestUsers": false,
-                                        "UserPreferencesShowWorkPhoneToGuestUsers": false,
-                                        "UserPreferencesShowManagerToGuestUsers": false,
-                                        "UserPreferencesShowEmailToGuestUsers": false,
-                                        "UserPreferencesCacheDiagnostics": false,
-                                        "UserPreferencesPathAssistantCollapsed": false,
-                                        "UserPreferencesDisableEndorsementEmail": false,
-                                        "UserPreferencesHideS1BrowserUI": false,
-                                        "UserPreferencesPipelineViewHideHelpPopover": false,
-                                        "UserPreferencesShowCountryToGuestUsers": false,
-                                        "UserPreferencesShowPostalCodeToGuestUsers": false,
-                                        "UserPreferencesShowStateToGuestUsers": false,
-                                        "UserPreferencesShowCityToGuestUsers": false,
-                                        "UserPreferencesShowTitleToGuestUsers": false,
-                                        "UserPreferencesShowProfilePicToGuestUsers": false,
-                                        "UserPreferencesShowCountryToExternalUsers": false,
-                                        "UserPreferencesShowPostalCodeToExternalUsers": false,
-                                        "UserPreferencesShowStateToExternalUsers": false,
-                                        "UserPreferencesShowCityToExternalUsers": false,
-                                        "UserPreferencesShowStreetAddressToExternalUsers": false,
-                                        "UserPreferencesShowFaxToExternalUsers": false,
-                                        "UserPreferencesShowMobilePhoneToExternalUsers": false,
-                                        "UserPreferencesShowWorkPhoneToExternalUsers": false,
-                                        "UserPreferencesShowEmailToExternalUsers": false,
-                                        "UserPreferencesShowManagerToExternalUsers": false,
-                                        "UserPreferencesShowTitleToExternalUsers": true,
-                                        "UserPreferencesDisableFileShareNotificationsForApi": false,
-                                        "UserPreferencesEnableAutoSubForFeeds": false,
-                                        "UserPreferencesDisableSharePostEmail": false,
-                                        "UserPreferencesDisableBookmarkEmail": false,
-                                        "UserPreferencesDisableMessageEmail": false,
-                                        "UserPreferencesSortFeedByComment": true,
-                                        "UserPreferencesDisableLikeEmail": true,
-                                        "UserPreferencesDisCommentAfterLikeEmail": false,
-                                        "UserPreferencesHideSecondChatterOnboardingSplash": false,
-                                        "UserPreferencesHideChatterOnboardingSplash": false,
-                                        "UserPreferencesHideCSNDesktopTask": false,
-                                        "UserPreferencesDisMentionsCommentEmail": false,
-                                        "UserPreferencesDisableMentionsPostEmail": false,
-                                        "UserPreferencesHideCSNGetChatterMobileTask": false,
-                                        "UserPreferencesReceiveNotificationsAsDelegatedApprover": false,
-                                        "UserPreferencesReceiveNoNotificationsAsApprover": false,
-                                        "UserPreferencesApexPagesDeveloperMode": false,
-                                        "UserPreferencesContentEmailAsAndWhen": true,
-                                        "UserPreferencesContentNoEmail": true,
-                                        "UserPreferencesDisProfPostCommentEmail": false,
-                                        "UserPreferencesDisableLaterCommentEmail": false,
-                                        "UserPreferencesDisableChangeCommentEmail": false,
-                                        "UserPreferencesDisableProfilePostEmail": false,
-                                        "UserPreferencesDisableFollowersEmail": false,
-                                        "UserPreferencesDisableAllFeedsEmail": false,
-                                        "UserPreferencesReminderSoundOff": false,
-                                        "UserPreferencesTaskRemindersCheckboxDefault": true,
-                                        "UserPreferencesEventRemindersCheckboxDefault": true,
-                                        "UserPreferencesActivityRemindersPopup": true,
-                                        "ForecastEnabled": false,
-                                        "UserPermissionsChatterAnswersUser": false,
-                                        "UserPermissionsSiteforcePublisherUser": false,
-                                        "UserPermissionsSiteforceContributorUser": false,
-                                        "UserPermissionsSupportUser": false,
-                                        "UserPermissionsInteractionUser": false,
-                                        "UserPermissionsKnowledgeUser": false,
-                                        "UserPermissionsSFContentUser": false,
-                                        "UserPermissionsMobileUser": false,
-                                        "UserPermissionsCallCenterAutoLogin": false,
-                                        "UserPermissionsOfflineUser": false,
-                                        "UserPermissionsMarketingUser": false,
-                                        "NumberOfFailedLogins": 0,
-                                        "SystemModstamp": "2020-03-02T21:04:34.000Z",
-                                        "LastModifiedById": "0050f000008nTccAAE",
-                                        "LastModifiedDate": "2020-03-02T21:04:34.000Z",
-                                        "CreatedById": "0050f000008nTcNAAU",
-                                        "CreatedDate": "2018-07-12T22:14:06.000Z",
-                                        "LastPasswordChangeDate": "2019-02-28T16:07:34.000Z",
-                                        "LastLoginDate": "2020-03-02T17:18:23.000Z",
-                                        "LanguageLocaleKey": "en_US",
-                                        "UserType": "Standard",
-                                        "ProfileId": "00eG0000001AyZ0IAK",
-                                        "EmailEncodingKey": "ISO-8859-1",
-                                        "ReceivesAdminInfoEmails": true,
-                                        "ReceivesInfoEmails": true,
-                                        "LocaleSidKey": "en_US",
-                                        "UserRoleId": "00EG0000000xHqbMAE",
-                                        "TimeZoneSidKey": "America/Los_Angeles",
-                                        "IsActive": true,
-                                        "CommunityNickname": "chmoyle",
-                                        "Alias": "cmoyl",
-                                        "EmailPreferencesStayInTouchReminder": true,
-                                        "EmailPreferencesAutoBccStayInTouch": false,
-                                        "EmailPreferencesAutoBcc": true,
-                                        "Email": "chmoyle@apttus.com",
-                                        "Address": null,
-                                        "CompanyName": "Apttus",
-                                        "Name": "Chris Moyle",
-                                        "FirstName": "Chris",
-                                        "LastName": "Moyle",
-                                        "Username": "chmoyle@apttus.com.webstore.dev",
-                                        "Id": "0050f000008nTccAAE"
+                                        "PriceList": {
+                                            "APTS_Ext_ID": "a171T000005il1XQAQ",
+                                            "DisableBasedOnCurrencyAdjustment": false,
+                                            "Type": "Standard",
+                                            "GuidePage": "APTPSGuidedSelling",
+                                            "EffectiveDate": "2018-10-31T08:22:00.000Z",
+                                            "Active": true,
+                                            "SystemModstamp": "2021-03-24T11:38:23.000Z",
+                                            "LastModifiedById": "00550000000vtlpAAA",
+                                            "LastModifiedDate": "2021-03-24T11:38:23.000Z",
+                                            "CreatedById": "00550000000vtlpAAA",
+                                            "CreatedDate": "2019-05-08T11:14:39.000Z",
+                                            "CurrencyIsoCode": "USD",
+                                            "Name": "Tier 1 Hardware & Software",
+                                            "IsDeleted": false,
+                                            "OwnerId": "00550000000vtlpAAA",
+                                            "Id": "a171T000005il1XQAQ"
+                                        },
+                                        "ReadyForInvoiceDate": "2019-10-15",
+                                        "ExcludeFromDunning": false,
+                                        "CustomerPriority": "High",
+                                        "PriceListId": "a171T000005il1XQAQ",
+                                        "BillingPreferenceId": "a2d19000001VUE4AAO",
+                                        "BillingDayOfMonth": "1st of the Month",
+                                        "TaxExempt": "No",
+                                        "CertificateId": "a2s19000000RGuGAAW",
+                                        "IsCustomerPortal": true,
+                                        "IsPartner": true,
+                                        "LastActivityDate": "2021-04-08",
+                                        "SystemModstamp": "2021-04-08T07:04:58.000Z",
+                                        "LastModifiedById": "00550000000vtlpAAA",
+                                        "LastModifiedDate": "2021-04-06T10:26:56.000Z",
+                                        "CreatedById": "00550000000vtlpAAA",
+                                        "CreatedDate": "2019-05-09T08:17:08.000Z",
+                                        "OwnerId": "00550000000vtlpAAA",
+                                        "CurrencyIsoCode": "USD",
+                                        "Industry": "Other",
+                                        "Fax": "(211) 555-5556",
+                                        "Phone": "(211) 555-5555",
+                                        "ShippingAddress": {
+                                            "city": "Bangalore",
+                                            "country": "India",
+                                            "countryCode": "IN",
+                                            "geocodeAccuracy": null,
+                                            "latitude": null,
+                                            "longitude": null,
+                                            "postalCode": "560103",
+                                            "state": "Karnataka",
+                                            "stateCode": "KA",
+                                            "street": "14 Dry Island #111"
+                                        },
+                                        "ShippingCountryCode": "IN",
+                                        "ShippingStateCode": "KA",
+                                        "ShippingCountry": "India",
+                                        "ShippingPostalCode": "560103",
+                                        "ShippingState": "Karnataka",
+                                        "ShippingCity": "Bangalore",
+                                        "ShippingStreet": "14 Dry Island #111",
+                                        "BillingAddress": {
+                                            "city": "San Mateo",
+                                            "country": "United States",
+                                            "countryCode": "US",
+                                            "geocodeAccuracy": null,
+                                            "latitude": null,
+                                            "longitude": null,
+                                            "postalCode": "84321",
+                                            "state": "Utah",
+                                            "stateCode": "UT",
+                                            "street": "1400 Fashion Island Blvd #100"
+                                        },
+                                        "BillingCountryCode": "US",
+                                        "BillingStateCode": "UT",
+                                        "BillingCountry": "United States",
+                                        "BillingPostalCode": "84321",
+                                        "BillingState": "Utah",
+                                        "BillingCity": "San Mateo",
+                                        "BillingStreet": "1400 Fashion Island Blvd #100",
+                                        "Name": "ABC Corporation",
+                                        "IsDeleted": false,
+                                        "Id": "0011900000hnGsrAAE"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "deprecated": false
+            }
+        },
+        "/accounts/active": {
+            "get": {
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get Active Account",
+                "description": "The following request will return the current active account",
+                "operationId": "GetActiveAccount",
+                                "parameters": [
+                    {
+                        "name": "x-storefront",
+                        "in": "header",
+                        "description": "The name of the storefront being used for the request.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ECommerce"
+                        }
+                    },
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "Content type of the request body.",
+                        "required": true,
+                        "style": "simple",
+                        "explode": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "application/json"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Account"
+                                },
+                                "example": {
+                                    "title": "success",
+                                    "status": 200,
+                                    "data": {
+                                        "PriceList": {
+                                            "APTS_Ext_ID": "a171T000005il1XQAQ",
+                                            "DisableBasedOnCurrencyAdjustment": false,
+                                            "Type": "Standard",
+                                            "GuidePage": "APTPSGuidedSelling",
+                                            "EffectiveDate": "2018-10-31T08:22:00.000Z",
+                                            "Active": true,
+                                            "SystemModstamp": "2021-03-24T11:38:23.000Z",
+                                            "LastModifiedById": "00550000000vtlpAAA",
+                                            "LastModifiedDate": "2021-03-24T11:38:23.000Z",
+                                            "CreatedById": "00550000000vtlpAAA",
+                                            "CreatedDate": "2019-05-08T11:14:39.000Z",
+                                            "CurrencyIsoCode": "USD",
+                                            "Name": "Tier 1 Hardware & Software",
+                                            "IsDeleted": false,
+                                            "OwnerId": "00550000000vtlpAAA",
+                                            "Id": "a171T000005il1XQAQ"
+                                        },
+                                        "ReadyForInvoiceDate": "2019-10-15",
+                                        "ExcludeFromDunning": false,
+                                        "CustomerPriority": "High",
+                                        "PriceListId": "a171T000005il1XQAQ",
+                                        "BillingPreferenceId": "a2d19000001VUE4AAO",
+                                        "BillingDayOfMonth": "1st of the Month",
+                                        "TaxExempt": "No",
+                                        "CertificateId": "a2s19000000RGuGAAW",
+                                        "IsCustomerPortal": true,
+                                        "IsPartner": true,
+                                        "LastActivityDate": "2021-04-08",
+                                        "SystemModstamp": "2021-04-08T07:04:58.000Z",
+                                        "LastModifiedById": "00550000000vtlpAAA",
+                                        "LastModifiedDate": "2021-04-06T10:26:56.000Z",
+                                        "CreatedById": "00550000000vtlpAAA",
+                                        "CreatedDate": "2019-05-09T08:17:08.000Z",
+                                        "OwnerId": "00550000000vtlpAAA",
+                                        "CurrencyIsoCode": "USD",
+                                        "Industry": "Other",
+                                        "Fax": "(211) 555-5556",
+                                        "Phone": "(211) 555-5555",
+                                        "ShippingAddress": {
+                                            "city": "Bangalore",
+                                            "country": "India",
+                                            "countryCode": "IN",
+                                            "geocodeAccuracy": null,
+                                            "latitude": null,
+                                            "longitude": null,
+                                            "postalCode": "560103",
+                                            "state": "Karnataka",
+                                            "stateCode": "KA",
+                                            "street": "14 Dry Island #111"
+                                        },
+                                        "ShippingCountryCode": "IN",
+                                        "ShippingStateCode": "KA",
+                                        "ShippingCountry": "India",
+                                        "ShippingPostalCode": "560103",
+                                        "ShippingState": "Karnataka",
+                                        "ShippingCity": "Bangalore",
+                                        "ShippingStreet": "14 Dry Island #111",
+                                        "BillingAddress": {
+                                            "city": "San Mateo",
+                                            "country": "United States",
+                                            "countryCode": "US",
+                                            "geocodeAccuracy": null,
+                                            "latitude": null,
+                                            "longitude": null,
+                                            "postalCode": "84321",
+                                            "state": "Utah",
+                                            "stateCode": "UT",
+                                            "street": "1400 Fashion Island Blvd #100"
+                                        },
+                                        "BillingCountryCode": "US",
+                                        "BillingStateCode": "UT",
+                                        "BillingCountry": "United States",
+                                        "BillingPostalCode": "84321",
+                                        "BillingState": "Utah",
+                                        "BillingCity": "San Mateo",
+                                        "BillingStreet": "1400 Fashion Island Blvd #100",
+                                        "Name": "ABC Corporation",
+                                        "IsDeleted": false,
+                                        "Id": "0011900000hnGsrAAE"
                                     }
                                 }
                             }
@@ -24923,6 +25259,81 @@
                 "properties": {
                     "data": {
                         "type": "boolean"
+                    }
+                }
+            },
+            "Account": {
+                "title": "Account",
+                "type": "object",
+                "properties": {
+                    "PriceList": {
+                        "type": "object",
+                        "properties": {
+                            "Id": {
+                                "type": "string"
+                            },
+                            "Name": {
+                                "type": "string"
+                            },
+                            "Active": {
+                                "type": "boolean"
+                            },
+                            "PriceListId": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "PriceListId": {
+                        "type": "string"
+                    },
+                    "BillingPreferenceId": {
+                        "type": "string"
+                    },
+                    "TaxExempt": {
+                        "type": "boolean"
+                    },
+                    "ShippingAddress": {
+                        "type": "object",
+                        "properties": {
+                            "city": {
+                                "type": "string"
+                            },
+                            "country": {
+                                "type": "string"
+                            },
+                            "countryCode": {
+                                "type": "boolean"
+                            },
+                            "postalCode": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "CurrencyIsoCode": {
+                        "type": "string"
+                    },
+                    "BillingAddress": {
+                        "type": "object",
+                        "properties": {
+                            "city": {
+                                "type": "string"
+                            },
+                            "country": {
+                                "type": "string"
+                            },
+                            "countryCode": {
+                                "type": "boolean"
+                            },
+                            "postalCode": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "Id": {
+                        "type": "string"
+                    },
+                    "Name": {
+                        "type": "string"
                     }
                 }
             }
