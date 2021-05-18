@@ -13795,7 +13795,7 @@
                     "Cart Items"
                 ],
                 "summary": "Update Cart Item",
-                "description": "The cart items put endpoint can be used to update existing line items in a cart.\nA successful put will return the rules and line items associated with the updated product.",
+                "description": "The cart items put endpoint can be used to update existing line items in a cart.\nA successful put will return the rules and line items associated with the updated product.\n For multi charge type product line item, when performing updateCartItems, the added charge line item gets deleted and creates new charge line item. Hence, the request header should consist of all the charge line items while performing updatecartitems requests for the multi-charge type product line item. Furthermore, Pricing calls get executed based on the Pricing flag. If the Pricing flag is true then explicitly invoke the pricing API. If the Pricing flag is false then do not have to invoke pricing API it will be taken care.",
                 "operationId": "UpdateCartItem",
                 "parameters": [
                     {
@@ -24123,7 +24123,7 @@
                 "summary": "Get Default Account",
                 "description": "The following request will return the  account associated with the current user. For guest user it retrieves the account associated with the storefront object",
                 "operationId": "GetDefaultAccount",
-                                "parameters": [
+                "parameters": [
                     {
                         "name": "x-storefront",
                         "in": "header",
@@ -24258,7 +24258,7 @@
                 "summary": "Get Active Account",
                 "description": "The following request will return the current active account",
                 "operationId": "GetActiveAccount",
-                                "parameters": [
+                "parameters": [
                     {
                         "name": "x-storefront",
                         "in": "header",
