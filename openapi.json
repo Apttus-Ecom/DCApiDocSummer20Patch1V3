@@ -14195,6 +14195,18 @@
                         }
                     },
                     {
+                        "name": "lineNumbers",
+                        "in": "query",
+                        "description": "This is use to pass the lineNumber to fetch only those related lineitems after pricing in the response.",
+                        "required": false,
+                        "style": "form",
+                        "explode": true,
+                        "schema": {
+                            "type": "number",
+                            "example": "2"
+                        }
+                    },
+                    {
                         "name": "cartId",
                         "in": "path",
                         "description": "The reference to the cart or 'active' for the current active cart.",
