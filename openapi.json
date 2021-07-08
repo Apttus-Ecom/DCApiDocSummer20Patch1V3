@@ -14197,7 +14197,7 @@
                     {
                         "name": "lineNumbers",
                         "in": "query",
-                        "description": "This is use to pass the lineNumber to fetch only those related lineitems after pricing in the response.",
+                        "description": "Used to pass the line number to return only associated lineitems after pricing.",
                         "required": false,
                         "style": "form",
                         "explode": true,
