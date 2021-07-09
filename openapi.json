@@ -14197,13 +14197,13 @@
                     {
                         "name": "lineNumbers",
                         "in": "query",
-                        "description": "Used to pass the line number to return only associated lineitems after pricing.",
+                        "description": "|- This query parameter is used to pass the line number(s) to return only associated lineitems after pricing. Do not pass the lineNumber in the following cases-                                                                               -All the line items need to be retrieved.                       - One line item having dependent pricing change on unrelated line items in the cart.                                                                                                       For use cases like Related Pricing, all the related line items or the entire cart must be passed for the correct pricing results. If all related lines in the cart are not passed pricing may not be accurate.",
                         "required": false,
                         "style": "form",
                         "explode": true,
                         "schema": {
-                            "type": "number",
-                            "example": "2"
+                            "type": "string",
+                            "example": "2,3"
                         }
                     },
                     {
