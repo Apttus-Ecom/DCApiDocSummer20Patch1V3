@@ -21822,7 +21822,7 @@
                         "explode": false,
                         "schema": {
                             "type": "string",
-                            "example": "Apttus_Config2__Order__C"
+                            "example": "Apttus_Config2__ProductConfiguration__c"
                         }
                     },
                     {
